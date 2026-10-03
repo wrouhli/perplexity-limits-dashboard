@@ -143,9 +143,20 @@ function tickCountdown() {
 
 /* ── history chart ──────────────────────────────────────────── */
 
+/**
+ * The rows the current window selects, falling back to the whole series when
+ * the window would leave the chart empty — an aged demo dataset, or opening
+ * the page after a long gap, should still show a line.
+ */
+function pointsInWindow() {
+  const points = L.withinDays(state.history, state.windowDays);
+  if (points.length < 2 && state.history.length >= 2) return state.history;
+  return points;
+}
+
 function renderHistory(model) {
   const section = el('history-section');
-  const points = L.withinDays(state.history, state.windowDays);
+  const points = pointsInWindow();
   const series = L.seriesFor(points, 'pro');
 
   el('history-empty').classList.toggle('visible', series.length < 2);
@@ -256,7 +267,7 @@ function renderHistory(model) {
 }
 
 function renderVelocity() {
-  const points = L.withinDays(state.history, state.windowDays);
+  const points = pointsInWindow();
   const container = el('velocity-list');
   const rows = state.model.sources
     .filter((s) => s.state === 'capped')
