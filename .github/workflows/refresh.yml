@@ -1,0 +1,77 @@
+name: refresh data
+
+# Scrapes the current limits and commits them as static JSON.
+#
+# Needs one repository secret: PERPLEXITY_COOKIE, holding the Cookie header
+# your browser sends to perplexity.ai (or just the session token value).
+# Without it the job skips cleanly, so the page can ship before the secret
+# exists. See the README for how to obtain and rotate it.
+
+on:
+  schedule:
+    # Every 2 hours, off the hour: GitHub delays jobs scheduled at :00.
+    - cron: '17 */2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Is the cookie configured?
+        id: cfg
+        env:
+          COOKIE: ${{ secrets.PERPLEXITY_COOKIE }}
+        run: |
+          if [ -n "$COOKIE" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Refresh skipped::PERPLEXITY_COOKIE is not set. Add it under Settings → Secrets and variables → Actions."
+          fi
+
+      - name: Fetch limits
+        if: steps.cfg.outputs.configured == 'true'
+        env:
+          PERPLEXITY_COOKIE: ${{ secrets.PERPLEXITY_COOKIE }}
+        run: python3 scripts/fetch_limits.py
+
+      - name: Commit if the snapshot changed
+        if: steps.cfg.outputs.configured == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --staged --quiet; then
+            echo "no change"
+          else
+            git commit -m "data: refresh limits snapshot"
+            git push
+          fi
+
+      - name: Stage the site
+        run: |
+          mkdir -p _site
+          cp index.html styles.css app.js lib.js sw.js icon.svg manifest.webmanifest _site/
+          cp -r data _site/data
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
