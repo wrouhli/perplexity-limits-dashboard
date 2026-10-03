@@ -1,0 +1,54 @@
+{
+  "demo": true,
+  "status": "ok",
+  "fetched_at": "2026-10-03T12:00:00Z",
+  "reset_at": "2026-10-10T00:00:00Z",
+  "remaining_pro": 194,
+  "remaining_research": 44,
+  "remaining_labs": 1,
+  "remaining_agentic_research": 0,
+  "limit_pro": 600,
+  "limit_research": 100,
+  "limit_labs": 15,
+  "limit_agentic_research": 14,
+  "sources": {
+    "source_to_limit": {
+      "github_mcp_direct": {
+        "remaining": 44,
+        "monthly_limit": 100
+      },
+      "notion_mcp": {
+        "remaining": 22,
+        "monthly_limit": 50
+      },
+      "scholar": {
+        "remaining": 16,
+        "monthly_limit": 30
+      },
+      "crunchbase": {
+        "remaining": 0,
+        "monthly_limit": 20
+      },
+      "web": {
+        "remaining": null,
+        "monthly_limit": null
+      },
+      "social": {
+        "remaining": null,
+        "monthly_limit": null
+      },
+      "factset": {
+        "remaining": 0,
+        "monthly_limit": 0
+      },
+      "pitchbook_mcp_cashmere": {
+        "remaining": 0,
+        "monthly_limit": 0
+      },
+      "wiley_mcp_cashmere": {
+        "remaining": 0,
+        "monthly_limit": 0
+      }
+    }
+  }
+}

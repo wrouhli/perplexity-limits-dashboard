@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perplexity Limits Dashboard</title>
+  <meta name="description" content="Track your Perplexity AI usage: limits, remaining queries, data source quotas and burn rate.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)">
+
+  <meta property="og:title" content="Perplexity Limits Dashboard">
+  <meta property="og:description" content="Limits, remaining queries, data source quotas and burn rate at a glance.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+
+<a class="sr-only" href="#main-content">Skip to content</a>
+
+<header class="header">
+  <div class="logo" aria-label="Perplexity Limits Dashboard">
+    <img class="logo-mark" src="icon.svg" width="32" height="32" alt="" aria-hidden="true">
+    <span class="logo-wordmark">Perplexity <span>Limits</span></span>
+    <span class="demo-chip" id="demo-chip" title="This page is showing sample data, not a real account">Demo data</span>
+  </div>
+
+  <div class="header-right">
+    <button class="btn-icon install-btn" id="install-btn" aria-label="Install as an app" title="Install as an app">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+      </svg>
+    </button>
+    <span id="status-dot" class="status-dot loading" title="Loading…"></span>
+    <span id="last-updated" class="last-updated" role="status" aria-live="polite">Loading…</span>
+    <button class="btn-icon" id="refresh-btn" aria-label="Reload data" title="Reload data">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
+      </svg>
+    </button>
+    <button class="btn-icon" id="theme-toggle" aria-label="Switch to light mode" title="Toggle theme">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+<main id="main-content">
+
+  <div class="stale-banner" id="stale-banner" role="status"></div>
+
+  <div id="skeleton-loader">
+    <div class="kpi-grid">
+      <div class="skeleton skel-card"></div>
+      <div class="skeleton skel-card"></div>
+      <div class="skeleton skel-card"></div>
+      <div class="skeleton skel-card"></div>
+    </div>
+    <div class="sources-capped-grid">
+      <div class="skeleton" style="height:140px;border-radius:var(--radius-xl)"></div>
+      <div class="skeleton" style="height:140px;border-radius:var(--radius-xl)"></div>
+      <div class="skeleton" style="height:140px;border-radius:var(--radius-xl)"></div>
+    </div>
+  </div>
+
+  <!-- ── Fallback: paste your own snapshot ── -->
+  <div class="paste-zone" id="paste-zone">
+    <div class="paste-icon" aria-hidden="true">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+      </svg>
+    </div>
+    <h2 class="paste-title">Paste your limits</h2>
+    <p class="paste-desc" id="paste-note">Visualise the raw data from Perplexity's rate-limit endpoint without publishing anything.</p>
+    <div class="paste-steps">
+      <div class="paste-step"><div class="step-num">1</div><span>Open <a href="https://www.perplexity.ai/rest/rate-limit/all" target="_blank" rel="noopener noreferrer" class="paste-link">perplexity.ai/rest/rate-limit/all</a> while logged in</span></div>
+      <div class="paste-step"><div class="step-num">2</div><span>Select all (<kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>⌘</kbd>+<kbd>A</kbd>) and copy the JSON</span></div>
+      <div class="paste-step"><div class="step-num">3</div><span>Paste it anywhere on this page — or into the box below</span></div>
+    </div>
+    <textarea class="paste-textarea" id="paste-input" spellcheck="false" placeholder='{"remaining_pro":196,"sources":{"source_to_limit":{...}}}'></textarea>
+    <span class="paste-error" id="paste-error"></span>
+    <button class="btn-primary" id="paste-submit">Visualise limits</button>
+  </div>
+
+  <!-- ── Dashboard ── -->
+  <div id="dashboard">
+
+    <section aria-labelledby="sec-global">
+      <div class="section-head"><h2 id="sec-global">Global quotas</h2></div>
+      <div class="kpi-grid" id="kpi-grid"></div>
+    </section>
+
+    <div class="reset-strip" id="reset-strip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+      </svg>
+      <span>Quota resets <strong id="reset-when"></strong></span>
+      <span class="reset-countdown" id="reset-countdown"></span>
+    </div>
+
+    <section id="history-section" aria-labelledby="sec-history">
+      <div class="section-head">
+        <h2 id="sec-history">Burn rate</h2>
+        <div class="history-window-wrap" id="history-window-wrap">
+          <label class="sr-only" for="history-window">History window</label>
+          <select id="history-window" class="select">
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="0">All time</option>
+          </select>
+        </div>
+      </div>
+      <p class="history-summary" id="history-summary"></p>
+      <div class="chart-wrap"><canvas id="history-chart" aria-label="Pro queries remaining over time"></canvas></div>
+      <p class="empty-note" id="history-chart-note">Chart library unavailable (offline). Raw history is still exported below.</p>
+      <div id="velocity-section">
+        <h3 class="sub-head">Fastest drains</h3>
+        <div id="velocity-list"></div>
+      </div>
+    </section>
+
+    <p class="empty-note" id="history-empty">No history yet — the first few refresh runs will build a burn-rate chart.</p>
+
+    <section id="capped-section" aria-labelledby="sec-premium">
+      <div class="section-head"><h2 id="sec-premium">Premium data sources</h2></div>
+      <div class="sources-capped-grid" id="capped-grid"></div>
+    </section>
+
+    <section aria-labelledby="sec-connectors">
+      <div class="section-head"><h2 id="sec-connectors">Active connectors</h2></div>
+      <div class="connectors-grid" id="connectors-grid" role="list"></div>
+    </section>
+
+    <section aria-labelledby="sec-unavail" id="unavail-section">
+      <div class="section-head"><h2 id="sec-unavail">Not in your plan</h2></div>
+      <div class="connectors-grid" id="unavail-grid" role="list"></div>
+    </section>
+
+    <section aria-labelledby="sec-raw">
+      <div class="section-head">
+        <h2 id="sec-raw">Raw data</h2>
+        <div class="toolbar">
+          <button class="btn-ghost" id="paste-toggle">Paste data</button>
+          <button class="btn-ghost" id="export-json">Export JSON</button>
+          <button class="btn-ghost" id="export-csv">Export CSV</button>
+          <button class="raw-toggle" id="raw-toggle" aria-expanded="false">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            <span id="raw-toggle-text">Show raw JSON</span>
+          </button>
+        </div>
+      </div>
+      <pre class="raw-block" id="raw-block" role="region" aria-label="Raw JSON data"></pre>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  Perplexity Limits Dashboard
+  &nbsp;·&nbsp; <a href="https://github.com/wrouhli/perplexity-limits-dashboard">source</a>
+  &nbsp;·&nbsp; Data from <a href="https://www.perplexity.ai/rest/rate-limit/all" target="_blank" rel="noopener noreferrer">perplexity.ai/rest/rate-limit/all</a>
+  &nbsp;·&nbsp; Built for Wahid — <a href="https://konnectoos.com" target="_blank" rel="noopener noreferrer">Konnectoos</a>
+</footer>
+
+</body>
+</html>
