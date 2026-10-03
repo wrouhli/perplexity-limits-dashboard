@@ -201,8 +201,10 @@ export function installDOM(input) {
   g.URL.revokeObjectURL = () => {};
 
   // gjs exposes `window` as a read-only alias of the global object, so this
-  // has to be defensive rather than a plain assignment.
+  // has to be defensive rather than a plain assignment. Node has no `window`
+  // at all, which is why it is defined rather than assumed.
   const win = typeof g.window === 'object' && g.window !== null ? g.window : g;
+  if (typeof g.window !== 'object') defineGlobal('window', win);
   win.matchMedia = g.matchMedia;
   win.requestAnimationFrame = g.requestAnimationFrame;
   win.location = g.location;

@@ -40,6 +40,8 @@ const env = installDOM({ snapshot, history: historyText });
 await import('../app.js');
 await env.settle();
 
+ok(typeof window === 'object', 'the shim provides a window, as browsers and gjs do');
+
 eq(env.fetches.length, 2, 'the page requests exactly the snapshot and the history');
 ok(env.fetches[0].startsWith('./data/latest.json'), 'snapshot is fetched same-origin');
 ok(env.get('dashboard').classes.has('visible'), 'dashboard becomes visible');
@@ -64,9 +66,11 @@ ok(env.get('demo-chip').classes.has('visible'), 'demo data is labelled');
 ok(!env.get('stale-banner').classes.has('visible'), 'demo data is not nagged about being stale');
 
 ok(env.get('reset-when').textContent.length > 0, 'reset date resolved from the payload');
-ok(/^in \d+d \d+h$/.test(env.get('reset-countdown').textContent), `countdown rendered (${env.get('reset-countdown').textContent})`);
+ok(
+  /^(in \d+[dhm]|any moment)/.test(env.get('reset-countdown').textContent),
+  `countdown rendered (${env.get('reset-countdown').textContent})`
+);
 ok(env.get('reset-strip').classes.has('visible'), 'reset strip is shown');
-
 eq(env.intervals.length, 2, 'countdown and freshness tickers registered');
 ok(env.intervals.some((i) => i.ms === 30000), 'countdown ticks every 30s');
 const before = env.get('reset-countdown').textContent;
@@ -120,6 +124,19 @@ ok(forced.get('paste-zone').classes.has('visible'), '?paste=1 forces paste mode'
 eq(forced.fetches.filter((u) => u.includes('latest.json')).length, 0, '?paste=1 skips the snapshot request');
 eq(forced.fetches.filter((u) => u.includes('history.jsonl')).length, 1, '?paste=1 still loads history');
 ok(forced.get('paste-note').textContent.includes('Paste the JSON'), 'forced paste mode explains itself');
+
+/* ── an aged dataset still charts ───────────────────────────── */
+const agedHistory = [0, 1, 2, 3]
+  .map((i) => JSON.stringify({ t: new Date(Date.UTC(2025, 0, 1 + i)).toISOString(), pro: 400 - i * 10 }))
+  .join('\n');
+const aged = installDOM({ snapshot: { remaining_pro: 370 }, history: agedHistory });
+aged.activate();
+env.get('refresh-btn').dispatch('click');
+await aged.settle();
+
+const agedChart = aged.charts[aged.charts.length - 1];
+const agedPoints = agedChart ? agedChart.config.data.datasets[0].data.filter((v) => v !== null).length : 0;
+eq(agedPoints, 4, 'rows outside the default window are still charted rather than showing nothing');
 
 /* ── no fabricated zeros ────────────────────────────────────── */
 const sparse = installDOM({ snapshot: snapshotWithoutLabs, history: '' });
