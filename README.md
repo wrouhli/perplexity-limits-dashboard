@@ -4,6 +4,8 @@ Track your Perplexity AI usage at a glance — limits, remaining queries, data s
 
 ![tests](https://github.com/wrouhli/perplexity-limits-dashboard/actions/workflows/ci.yml/badge.svg)
 
+**[→ Open the live dashboard](https://wrouhli.github.io/perplexity-limits-dashboard/)** — running on GitHub Pages, currently showing the demo dataset.
+
 A single static page with no build step, no framework, no backend, and no CORS hacks. It reads two JSON files that sit next to it and draws the dashboard.
 
 ## Two ways it gets data
