@@ -1,0 +1,46 @@
+name: capture screenshot
+
+# Temporary helper: pulls a screenshot produced by the browser tool into
+# assets/ and commits it, so the README can show the real dashboard without
+# anyone hand-uploading a PNG.
+#
+# It runs when .capture-request changes. Each line is "<filename> <url>".
+# Both this workflow and .capture-request are deleted once the images land.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.capture-request'
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the requested images
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          while read -r name url; do
+            case "$name" in ''|'#'*) continue ;; esac
+            [ -z "$url" ] && continue
+            curl -fsSL "$url" -o "assets/$name"
+            file "assets/$name"
+          done < .capture-request
+
+      - name: Commit
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets
+          if git diff --staged --quiet; then
+            echo "nothing new"
+          else
+            git commit -m "docs: add a screenshot of the running dashboard"
+            git push
+          fi
