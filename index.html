@@ -4,277 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Perplexity Limits Dashboard</title>
+  <meta name="description" content="Track your Perplexity AI usage: limits, remaining queries, data source quotas and burn rate.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#141312" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f7f6f2" media="(prefers-color-scheme: light)">
+
+  <meta property="og:title" content="Perplexity Limits Dashboard">
+  <meta property="og:description" content="Limits, remaining queries, data source quotas and burn rate at a glance.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://api.fontshare.com">
   <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,600,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
-  <style>
-    /* ─── DESIGN TOKENS ─────────────────────────────────────── */
-    :root, [data-theme="light"] {
-      --color-bg:              #f7f6f2;
-      --color-surface:         #f9f8f5;
-      --color-surface-2:       #fbfbf9;
-      --color-surface-offset:  #f3f0ec;
-      --color-surface-dynamic: #e6e4df;
-      --color-divider:         #dcd9d5;
-      --color-border:          #d4d1ca;
-      --color-text:            #28251d;
-      --color-text-muted:      #7a7974;
-      --color-text-faint:      #bab9b4;
-      --color-text-inverse:    #f9f8f4;
-      --color-primary:         #01696f;
-      --color-primary-hover:   #0c4e54;
-      --color-primary-hl:      #cedcd8;
-      --color-success:         #437a22;
-      --color-success-hl:      #d4dfcc;
-      --color-warning:         #964219;
-      --color-warning-hl:      #ddcfc6;
-      --color-error:           #a12c7b;
-      --color-error-hl:        #e0ced7;
-      --color-gold:            #d19900;
-      --color-gold-hl:         #e9e0c6;
-      --shadow-sm:  0 1px 2px oklch(0.2 0.01 80 / 0.06);
-      --shadow-md:  0 4px 12px oklch(0.2 0.01 80 / 0.08);
-      --shadow-lg:  0 12px 32px oklch(0.2 0.01 80 / 0.12);
-      --radius-sm:  0.375rem; --radius-md: 0.5rem;
-      --radius-lg:  0.75rem;  --radius-xl: 1rem;
-      --radius-full:9999px;
-      --font-body:  'Satoshi', 'Inter', sans-serif;
-      --ease:       cubic-bezier(0.16, 1, 0.3, 1);
-      --sp1:.25rem; --sp2:.5rem; --sp3:.75rem; --sp4:1rem;
-      --sp5:1.25rem; --sp6:1.5rem; --sp8:2rem; --sp10:2.5rem;
-      --sp12:3rem; --sp16:4rem;
-      --tx-xs: clamp(0.75rem,.7rem + .25vw,.875rem);
-      --tx-sm: clamp(0.875rem,.8rem + .35vw,1rem);
-      --tx-base: clamp(1rem,.95rem + .25vw,1.125rem);
-      --tx-lg: clamp(1.125rem,1rem + .75vw,1.5rem);
-      --tx-xl: clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
-    }
-    [data-theme="dark"] {
-      --color-bg:              #141312;
-      --color-surface:         #1a1917;
-      --color-surface-2:       #1f1e1c;
-      --color-surface-offset:  #1c1b19;
-      --color-surface-dynamic: #2b2a28;
-      --color-divider:         #252422;
-      --color-border:          #353432;
-      --color-text:            #d0cfcd;
-      --color-text-muted:      #7a7977;
-      --color-text-faint:      #575654;
-      --color-text-inverse:    #2a2927;
-      --color-primary:         #4f98a3;
-      --color-primary-hover:   #227f8b;
-      --color-primary-hl:      #2d3b3c;
-      --color-success:         #6daa45;
-      --color-success-hl:      #303f2a;
-      --color-warning:         #d47a3e;
-      --color-warning-hl:      #4a3828;
-      --color-error:           #d163a7;
-      --color-error-hl:        #3e2636;
-      --color-gold:            #e8af34;
-      --color-gold-hl:         #3f3520;
-      --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.25);
-      --shadow-md: 0 4px 12px oklch(0 0 0 / 0.35);
-      --shadow-lg: 0 12px 32px oklch(0 0 0 / 0.45);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme]) { --color-bg:#141312; --color-surface:#1a1917; --color-surface-2:#1f1e1c; --color-surface-offset:#1c1b19; --color-surface-dynamic:#2b2a28; --color-divider:#252422; --color-border:#353432; --color-text:#d0cfcd; --color-text-muted:#7a7977; --color-text-faint:#575654; --color-text-inverse:#2a2927; --color-primary:#4f98a3; --color-primary-hover:#227f8b; --color-primary-hl:#2d3b3c; --color-success:#6daa45; --color-success-hl:#303f2a; --color-warning:#d47a3e; --color-warning-hl:#4a3828; --color-error:#d163a7; --color-error-hl:#3e2636; --color-gold:#e8af34; --color-gold-hl:#3f3520; --shadow-sm:0 1px 2px oklch(0 0 0/.25); --shadow-md:0 4px 12px oklch(0 0 0/.35); --shadow-lg:0 12px 32px oklch(0 0 0/.45); }
-    }
-
-    /* ─── BASE RESET ─────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; scroll-behavior: smooth; }
-    body { min-height: 100dvh; font-family: var(--font-body); font-size: var(--tx-sm); color: var(--color-text); background: var(--color-bg); line-height: 1.6; }
-    button { cursor: pointer; background: none; border: none; font: inherit; color: inherit; }
-    img, svg { display: block; }
-    :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; border-radius: var(--radius-sm); }
-    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
-
-    /* ─── HEADER ─────────────────────────────────────────────── */
-    .header {
-      position: sticky; top: 0; z-index: 100;
-      background: color-mix(in oklch, var(--color-surface) 92%, transparent);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--color-border);
-      padding: var(--sp4) var(--sp8);
-      display: flex; align-items: center; gap: var(--sp4);
-    }
-    .logo { display: flex; align-items: center; gap: var(--sp3); text-decoration: none; color: inherit; }
-    .logo-wordmark { font-size: var(--tx-base); font-weight: 700; letter-spacing: -0.025em; }
-    .logo-wordmark span { color: var(--color-primary); }
-    .header-right { margin-left: auto; display: flex; align-items: center; gap: var(--sp3); }
-    .status-dot { width: 7px; height: 7px; border-radius: var(--radius-full); background: var(--color-success); box-shadow: 0 0 0 2px var(--color-success-hl); flex-shrink: 0; }
-    .status-dot.loading { background: var(--color-gold); box-shadow: 0 0 0 2px var(--color-gold-hl); animation: pulse 1.4s ease-in-out infinite; }
-    .status-dot.error { background: var(--color-error); box-shadow: 0 0 0 2px var(--color-error-hl); }
-    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.4; } }
-    .last-updated { font-size: var(--tx-xs); color: var(--color-text-muted); }
-    .btn-icon {
-      display: flex; align-items: center; justify-content: center;
-      width: 34px; height: 34px; border-radius: var(--radius-md);
-      border: 1px solid var(--color-border); color: var(--color-text-muted);
-      transition: all 180ms var(--ease);
-    }
-    .btn-icon:hover { background: var(--color-surface-dynamic); color: var(--color-text); border-color: transparent; }
-    .btn-icon.spinning svg { animation: spin 0.8s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ─── MAIN LAYOUT ────────────────────────────────────────── */
-    main { max-width: 1180px; margin: 0 auto; padding: var(--sp8); width: 100%; display: flex; flex-direction: column; gap: var(--sp10); }
-
-    /* ─── SECTION HEADER ─────────────────────────────────────── */
-    .section-head { display: flex; align-items: center; gap: var(--sp3); margin-bottom: var(--sp5); }
-    .section-head h2 { font-size: var(--tx-xs); font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .08em; }
-    .section-head::after { content: ''; flex: 1; height: 1px; background: var(--color-divider); }
-
-    /* ─── KPI CARDS ──────────────────────────────────────────── */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--sp4); }
-    .kpi-card {
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl); padding: var(--sp6);
-      display: flex; flex-direction: column; gap: var(--sp3);
-      box-shadow: var(--shadow-sm); transition: box-shadow 200ms var(--ease), transform 200ms var(--ease);
-    }
-    .kpi-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-    .kpi-top { display: flex; align-items: flex-start; justify-content: space-between; }
-    .kpi-icon { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-    .kpi-icon.pro { background: var(--color-primary-hl); color: var(--color-primary); }
-    .kpi-icon.research { background: var(--color-success-hl); color: var(--color-success); }
-    .kpi-icon.labs { background: var(--color-gold-hl); color: var(--color-gold); }
-    .kpi-icon.agentic { background: var(--color-error-hl); color: var(--color-error); }
-    .kpi-number { font-size: var(--tx-xl); font-weight: 700; letter-spacing: -0.04em; line-height: 1; font-variant-numeric: tabular-nums lining-nums; color: var(--color-text); }
-    .kpi-number.zero { color: var(--color-error); }
-    .kpi-label { font-size: var(--tx-xs); font-weight: 500; color: var(--color-text-muted); }
-    .kpi-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: var(--radius-full); font-size: var(--tx-xs); font-weight: 500; width: fit-content; }
-    .badge-ok { background: var(--color-success-hl); color: var(--color-success); }
-    .badge-warn { background: var(--color-warning-hl); color: var(--color-warning); }
-    .badge-empty { background: var(--color-error-hl); color: var(--color-error); }
-    .badge-info { background: var(--color-primary-hl); color: var(--color-primary); }
-
-    /* ─── DONUT CHARTS (CAPPED SOURCES) ──────────────────────── */
-    .sources-capped-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--sp4); }
-    .source-card {
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-xl); padding: var(--sp6);
-      display: flex; flex-direction: column; gap: var(--sp4);
-      box-shadow: var(--shadow-sm); transition: box-shadow 200ms var(--ease), transform 200ms var(--ease);
-    }
-    .source-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-    .source-card-header { display: flex; align-items: center; justify-content: space-between; }
-    .source-card-name { font-size: var(--tx-sm); font-weight: 600; color: var(--color-text); }
-    .source-card-tag { font-size: var(--tx-xs); color: var(--color-text-faint); background: var(--color-surface-dynamic); padding: 2px 8px; border-radius: var(--radius-full); }
-    .source-chart-row { display: flex; align-items: center; gap: var(--sp5); }
-    .source-chart-wrap { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
-    .source-chart-wrap canvas { position: absolute; top: 0; left: 0; }
-    .source-chart-inner { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
-    .source-chart-num { font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; color: var(--color-text); }
-    .source-chart-denom { font-size: var(--tx-xs); color: var(--color-text-faint); }
-    .source-stats { display: flex; flex-direction: column; gap: var(--sp1); }
-    .source-stat-row { display: flex; align-items: center; gap: var(--sp2); font-size: var(--tx-xs); }
-    .source-stat-dot { width: 6px; height: 6px; border-radius: var(--radius-full); flex-shrink: 0; }
-    .source-stat-label { color: var(--color-text-muted); }
-    .source-stat-val { font-weight: 600; font-variant-numeric: tabular-nums; margin-left: auto; }
-    .source-progress-track { height: 4px; background: var(--color-surface-dynamic); border-radius: var(--radius-full); overflow: hidden; margin-top: var(--sp1); }
-    .source-progress-fill { height: 100%; border-radius: var(--radius-full); transition: width 900ms var(--ease); }
-
-    /* ─── CONNECTOR CHIPS ────────────────────────────────────── */
-    .connectors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: var(--sp3); }
-    .connector-chip {
-      background: var(--color-surface); border: 1px solid var(--color-border);
-      border-radius: var(--radius-lg); padding: var(--sp4) var(--sp5);
-      display: flex; align-items: center; gap: var(--sp3);
-      box-shadow: var(--shadow-sm); transition: box-shadow 180ms var(--ease);
-    }
-    .connector-chip:hover { box-shadow: var(--shadow-md); }
-    .connector-chip.unavailable { opacity: 0.45; }
-    .conn-dot { width: 8px; height: 8px; border-radius: var(--radius-full); flex-shrink: 0; }
-    .conn-dot.active { background: var(--color-success); }
-    .conn-dot.off { background: var(--color-text-faint); }
-    .conn-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-    .conn-name { font-size: var(--tx-xs); font-weight: 600; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .conn-sub { font-size: var(--tx-xs); color: var(--color-text-faint); }
-
-    /* ─── RAW DATA VIEWER ────────────────────────────────────── */
-    .raw-toggle { display: flex; align-items: center; gap: var(--sp2); font-size: var(--tx-xs); color: var(--color-text-muted); cursor: pointer; width: fit-content; padding: var(--sp2) var(--sp3); border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-surface); transition: all 180ms var(--ease); }
-    .raw-toggle:hover { background: var(--color-surface-dynamic); color: var(--color-text); }
-    .raw-block { background: var(--color-surface-2); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--sp5); font-family: 'Courier New', monospace; font-size: var(--tx-xs); color: var(--color-text-muted); overflow-x: auto; white-space: pre; line-height: 1.7; display: none; margin-top: var(--sp4); }
-    .raw-block.open { display: block; }
-
-    /* ─── PASTE ZONE ─────────────────────────────────────────── */
-    .paste-zone {
-      background: var(--color-surface); border: 1px dashed var(--color-border);
-      border-radius: var(--radius-xl); padding: var(--sp12) var(--sp8);
-      display: none; flex-direction: column; align-items: center; gap: var(--sp5);
-      text-align: center;
-    }
-    .paste-zone.visible { display: flex; }
-    .paste-icon { width: 48px; height: 48px; border-radius: var(--radius-lg); background: var(--color-primary-hl); color: var(--color-primary); display: flex; align-items: center; justify-content: center; }
-    .paste-title { font-size: var(--tx-lg); font-weight: 700; color: var(--color-text); }
-    .paste-desc { font-size: var(--tx-sm); color: var(--color-text-muted); max-width: 46ch; }
-    .paste-link { color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; font-weight: 500; }
-    .paste-steps { display: flex; flex-direction: column; gap: var(--sp2); text-align: left; width: 100%; max-width: 480px; }
-    .paste-step { display: flex; align-items: flex-start; gap: var(--sp3); font-size: var(--tx-sm); color: var(--color-text-muted); }
-    .step-num { width: 22px; height: 22px; border-radius: var(--radius-full); background: var(--color-surface-dynamic); display: flex; align-items: center; justify-content: center; font-size: var(--tx-xs); font-weight: 700; color: var(--color-primary); flex-shrink: 0; margin-top: 2px; }
-    .paste-textarea {
-      width: 100%; max-width: 520px; height: 110px;
-      background: var(--color-surface-2); border: 1px solid var(--color-border);
-      border-radius: var(--radius-md); padding: var(--sp4);
-      font-family: 'Courier New', monospace; font-size: var(--tx-xs);
-      color: var(--color-text); resize: vertical;
-      transition: border-color 180ms var(--ease);
-    }
-    .paste-textarea:focus { outline: none; border-color: var(--color-primary); }
-    .btn-primary { background: var(--color-primary); color: white; border-radius: var(--radius-md); padding: var(--sp3) var(--sp8); font-size: var(--tx-sm); font-weight: 600; transition: background 180ms var(--ease); }
-    .btn-primary:hover { background: var(--color-primary-hover); }
-    .paste-error { font-size: var(--tx-xs); color: var(--color-error); display: none; }
-
-    /* ─── LOADING SKELETONS ──────────────────────────────────── */
-    @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }
-    .skeleton { background: linear-gradient(90deg,var(--color-surface-offset) 25%,var(--color-surface-dynamic) 50%,var(--color-surface-offset) 75%); background-size:200% 100%; animation:shimmer 1.5s ease-in-out infinite; border-radius:var(--radius-sm); }
-    .skel-card { height: 130px; border-radius: var(--radius-xl); }
-
-    /* ─── DASHBOARD WRAPPER ──────────────────────────────────── */
-    #dashboard { display: none; flex-direction: column; gap: var(--sp10); }
-    #dashboard.visible { display: flex; }
-
-    /* ─── FOOTER ─────────────────────────────────────────────── */
-    footer { text-align: center; padding: var(--sp8); font-size: var(--tx-xs); color: var(--color-text-faint); border-top: 1px solid var(--color-divider); }
-    footer a { color: var(--color-primary); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-
-    /* ─── RESPONSIVE ─────────────────────────────────────────── */
-    @media (max-width: 640px) {
-      .header { padding: var(--sp3) var(--sp4); }
-      .logo-wordmark { display: none; }
-      main { padding: var(--sp4); gap: var(--sp8); }
-      .kpi-grid { grid-template-columns: 1fr 1fr; }
-    }
-  </style>
+  <script type="module" src="app.js"></script>
 </head>
 <body>
 
-<a class="sr-only" href="#main-content" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap">Skip to content</a>
+<a class="sr-only" href="#main-content">Skip to content</a>
 
-<!-- HEADER -->
-<header class="header" role="banner">
+<header class="header">
   <div class="logo" aria-label="Perplexity Limits Dashboard">
-    <!-- Custom SVG Logo -->
-    <svg class="logo-mark" width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-      <rect width="32" height="32" rx="8" fill="var(--color-primary)"/>
-      <path d="M16 7L22 12V20L16 25L10 20V12L16 7Z" fill="none" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-      <circle cx="16" cy="16" r="3" fill="white"/>
-    </svg>
+    <img class="logo-mark" src="icon.svg" width="32" height="32" alt="" aria-hidden="true">
     <span class="logo-wordmark">Perplexity <span>Limits</span></span>
+    <span class="demo-chip" id="demo-chip" title="This page is showing sample data, not a real account">Demo data</span>
   </div>
 
   <div class="header-right">
-    <div id="status-dot" class="status-dot loading" title="Loading..."></div>
-    <span id="last-updated" class="last-updated">Fetching data…</span>
-    <button class="btn-icon" id="refresh-btn" aria-label="Refresh data" title="Refresh data">
+    <button class="btn-icon install-btn" id="install-btn" aria-label="Install as an app" title="Install as an app">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+      </svg>
+    </button>
+    <span id="status-dot" class="status-dot loading" title="Loading…"></span>
+    <span id="last-updated" class="last-updated" role="status" aria-live="polite">Loading…</span>
+    <button class="btn-icon" id="refresh-btn" aria-label="Reload data" title="Reload data">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>
       </svg>
     </button>
-    <button class="btn-icon" id="theme-toggle" data-theme-toggle aria-label="Switch to light mode" title="Toggle theme">
+    <button class="btn-icon" id="theme-toggle" aria-label="Switch to light mode" title="Toggle theme">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
       </svg>
@@ -282,10 +55,10 @@
   </div>
 </header>
 
-<!-- MAIN -->
 <main id="main-content">
 
-  <!-- Skeleton loader -->
+  <div class="stale-banner" id="stale-banner" role="status"></div>
+
   <div id="skeleton-loader">
     <div class="kpi-grid">
       <div class="skeleton skel-card"></div>
@@ -294,66 +67,99 @@
       <div class="skeleton skel-card"></div>
     </div>
     <div class="sources-capped-grid">
-      <div class="skeleton" style="height:160px;border-radius:var(--radius-xl)"></div>
-      <div class="skeleton" style="height:160px;border-radius:var(--radius-xl)"></div>
-      <div class="skeleton" style="height:160px;border-radius:var(--radius-xl)"></div>
-      <div class="skeleton" style="height:160px;border-radius:var(--radius-xl)"></div>
+      <div class="skeleton" style="height:140px;border-radius:var(--radius-xl)"></div>
+      <div class="skeleton" style="height:140px;border-radius:var(--radius-xl)"></div>
+      <div class="skeleton" style="height:140px;border-radius:var(--radius-xl)"></div>
     </div>
   </div>
 
-  <!-- Paste zone (fallback) -->
+  <!-- ── Fallback: paste your own snapshot ── -->
   <div class="paste-zone" id="paste-zone">
     <div class="paste-icon" aria-hidden="true">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
       </svg>
     </div>
-    <h2 class="paste-title">Manual Data Entry</h2>
-    <p class="paste-desc">Auto-fetch was blocked (CORS / not authenticated). Paste your limit data below to visualize it.</p>
+    <h2 class="paste-title">Paste your limits</h2>
+    <p class="paste-desc" id="paste-note">Visualise the raw data from Perplexity's rate-limit endpoint without publishing anything.</p>
     <div class="paste-steps">
       <div class="paste-step"><div class="step-num">1</div><span>Open <a href="https://www.perplexity.ai/rest/rate-limit/all" target="_blank" rel="noopener noreferrer" class="paste-link">perplexity.ai/rest/rate-limit/all</a> while logged in</span></div>
-      <div class="paste-step"><div class="step-num">2</div><span>Select all text on the page (<kbd>Ctrl+A</kbd> / <kbd>Cmd+A</kbd>) and copy it</span></div>
-      <div class="paste-step"><div class="step-num">3</div><span>Paste the JSON into the box below and click <strong>Visualize</strong></span></div>
+      <div class="paste-step"><div class="step-num">2</div><span>Select all (<kbd>Ctrl</kbd>+<kbd>A</kbd> / <kbd>⌘</kbd>+<kbd>A</kbd>) and copy the JSON</span></div>
+      <div class="paste-step"><div class="step-num">3</div><span>Paste it anywhere on this page — or into the box below</span></div>
     </div>
-    <textarea class="paste-textarea" id="paste-input" placeholder='{"model_specific_limits":{},"remaining_pro":196,...}'></textarea>
-    <span class="paste-error" id="paste-error">⚠ Invalid JSON — please paste the raw data from the page.</span>
-    <button class="btn-primary" id="paste-submit">Visualize Limits</button>
+    <textarea class="paste-textarea" id="paste-input" spellcheck="false" placeholder='{"remaining_pro":196,"sources":{"source_to_limit":{...}}}'></textarea>
+    <span class="paste-error" id="paste-error"></span>
+    <button class="btn-primary" id="paste-submit">Visualise limits</button>
   </div>
 
-  <!-- Dashboard (shown after data loads) -->
+  <!-- ── Dashboard ── -->
   <div id="dashboard">
 
-    <!-- ── SECTION 1: GLOBAL QUOTAS ── -->
     <section aria-labelledby="sec-global">
-      <div class="section-head"><h2 id="sec-global">Global Quotas</h2></div>
+      <div class="section-head"><h2 id="sec-global">Global quotas</h2></div>
       <div class="kpi-grid" id="kpi-grid"></div>
     </section>
 
-    <!-- ── SECTION 2: PREMIUM DATA SOURCES ── -->
-    <section aria-labelledby="sec-premium">
-      <div class="section-head"><h2 id="sec-premium">Premium Data Sources</h2></div>
+    <div class="reset-strip" id="reset-strip">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+      </svg>
+      <span>Quota resets <strong id="reset-when"></strong></span>
+      <span class="reset-countdown" id="reset-countdown"></span>
+    </div>
+
+    <section id="history-section" aria-labelledby="sec-history">
+      <div class="section-head">
+        <h2 id="sec-history">Burn rate</h2>
+        <div class="history-window-wrap" id="history-window-wrap">
+          <label class="sr-only" for="history-window">History window</label>
+          <select id="history-window" class="select">
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 14 days</option>
+            <option value="30">Last 30 days</option>
+            <option value="0">All time</option>
+          </select>
+        </div>
+      </div>
+      <p class="history-summary" id="history-summary"></p>
+      <div class="chart-wrap"><canvas id="history-chart" aria-label="Pro queries remaining over time"></canvas></div>
+      <p class="empty-note" id="history-chart-note">Chart library unavailable (offline). Raw history is still exported below.</p>
+      <div id="velocity-section">
+        <h3 class="sub-head">Fastest drains</h3>
+        <div id="velocity-list"></div>
+      </div>
+    </section>
+
+    <p class="empty-note" id="history-empty">No history yet — the first few refresh runs will build a burn-rate chart.</p>
+
+    <section id="capped-section" aria-labelledby="sec-premium">
+      <div class="section-head"><h2 id="sec-premium">Premium data sources</h2></div>
       <div class="sources-capped-grid" id="capped-grid"></div>
     </section>
 
-    <!-- ── SECTION 3: ACTIVE CONNECTORS ── -->
     <section aria-labelledby="sec-connectors">
-      <div class="section-head"><h2 id="sec-connectors">Active Connectors</h2></div>
-      <div class="connectors-grid" id="connectors-grid"></div>
+      <div class="section-head"><h2 id="sec-connectors">Active connectors</h2></div>
+      <div class="connectors-grid" id="connectors-grid" role="list"></div>
     </section>
 
-    <!-- ── SECTION 4: UNAVAILABLE ── -->
     <section aria-labelledby="sec-unavail" id="unavail-section">
-      <div class="section-head"><h2 id="sec-unavail">Not In Your Plan</h2></div>
-      <div class="connectors-grid" id="unavail-grid"></div>
+      <div class="section-head"><h2 id="sec-unavail">Not in your plan</h2></div>
+      <div class="connectors-grid" id="unavail-grid" role="list"></div>
     </section>
 
-    <!-- ── RAW JSON ── -->
     <section aria-labelledby="sec-raw">
-      <div class="section-head"><h2 id="sec-raw">Raw Data</h2></div>
-      <button class="raw-toggle" id="raw-toggle" aria-expanded="false">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
-        Show raw JSON
-      </button>
+      <div class="section-head">
+        <h2 id="sec-raw">Raw data</h2>
+        <div class="toolbar">
+          <button class="btn-ghost" id="paste-toggle">Paste data</button>
+          <button class="btn-ghost" id="export-json">Export JSON</button>
+          <button class="btn-ghost" id="export-csv">Export CSV</button>
+          <button class="raw-toggle" id="raw-toggle" aria-expanded="false">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            <span id="raw-toggle-text">Show raw JSON</span>
+          </button>
+        </div>
+      </div>
       <pre class="raw-block" id="raw-block" role="region" aria-label="Raw JSON data"></pre>
     </section>
 
@@ -361,368 +167,11 @@
 </main>
 
 <footer>
-  Perplexity Limits Dashboard &nbsp;·&nbsp;
-  Data from <a href="https://www.perplexity.ai/rest/rate-limit/all" target="_blank" rel="noopener noreferrer">perplexity.ai/rest/rate-limit/all</a>
+  Perplexity Limits Dashboard
+  &nbsp;·&nbsp; <a href="https://github.com/wrouhli/perplexity-limits-dashboard">source</a>
+  &nbsp;·&nbsp; Data from <a href="https://www.perplexity.ai/rest/rate-limit/all" target="_blank" rel="noopener noreferrer">perplexity.ai/rest/rate-limit/all</a>
   &nbsp;·&nbsp; Built for Wahid — <a href="https://konnectoos.com" target="_blank" rel="noopener noreferrer">Konnectoos</a>
 </footer>
 
-<script>
-/* ═══════════════════════════════════════════════════════════════
-   PERPLEXITY LIMITS DASHBOARD
-   Wahid Rouhli / Konnectoos
-═══════════════════════════════════════════════════════════════ */
-
-const SOURCE_URL = 'https://www.perplexity.ai/rest/rate-limit/all';
-
-// Friendly names for sources
-const SOURCE_META = {
-  apple_healthkit:       { name: 'Apple Health',    tag: 'Health' },
-  asana_mcp_merge:       { name: 'Asana',           tag: 'Productivity' },
-  box:                   { name: 'Box',              tag: 'Storage' },
-  cbinsights_mcp_cashmere:{ name: 'CB Insights',    tag: 'Business Intel' },
-  confluence_mcp_merge:  { name: 'Confluence',      tag: 'Docs' },
-  crunchbase:            { name: 'Crunchbase',       tag: 'Startup Data' },
-  dropbox:               { name: 'Dropbox',          tag: 'Storage' },
-  factset:               { name: 'FactSet',          tag: 'Finance' },
-  gcal:                  { name: 'Google Calendar',  tag: 'Productivity' },
-  github_mcp_direct:     { name: 'GitHub',           tag: 'Dev' },
-  google_drive:          { name: 'Google Drive',     tag: 'Storage' },
-  jira_mcp_merge:        { name: 'Jira',             tag: 'Project Mgmt' },
-  linear_alt:            { name: 'Linear',           tag: 'Project Mgmt' },
-  microsoft_teams_mcp_merge:{ name: 'MS Teams',      tag: 'Collaboration' },
-  notion_mcp:            { name: 'Notion',           tag: 'Productivity' },
-  onedrive:              { name: 'OneDrive',         tag: 'Storage' },
-  org:                   { name: 'Org',              tag: 'Internal' },
-  outlook:               { name: 'Outlook',          tag: 'Email' },
-  pitchbook_mcp_cashmere:{ name: 'PitchBook',        tag: 'VC Data' },
-  scholar:               { name: 'Scholar',          tag: 'Research' },
-  sharepoint:            { name: 'SharePoint',       tag: 'Enterprise' },
-  slack_direct:          { name: 'Slack',            tag: 'Messaging' },
-  social:                { name: 'Social',           tag: 'Social' },
-  statista_mcp_cashmere: { name: 'Statista',         tag: 'Stats' },
-  web:                   { name: 'Web Search',       tag: 'Core' },
-  wiley_mcp_cashmere:    { name: 'Wiley',            tag: 'Academic' },
-};
-
-let currentData = null;
-let chartInstances = {};
-
-// ── HELPERS ─────────────────────────────────────────────────
-function el(id) { return document.getElementById(id); }
-
-function setStatus(state, text) {
-  const dot = el('status-dot');
-  const label = el('last-updated');
-  dot.className = 'status-dot ' + (state === 'loading' ? 'loading' : state === 'error' ? 'error' : '');
-  label.textContent = text;
-  dot.title = text;
-}
-
-function fmt(n) { return n === null ? '—' : n.toLocaleString(); }
-
-function getBadge(remaining, monthly) {
-  if (monthly === 0) return { cls: 'badge-empty', label: 'Unavailable' };
-  if (remaining === 0) return { cls: 'badge-empty', label: 'Depleted' };
-  if (monthly === null) return { cls: 'badge-info', label: 'Unlimited' };
-  const pct = remaining / monthly;
-  if (pct <= 0.25) return { cls: 'badge-warn', label: 'Low' };
-  return { cls: 'badge-ok', label: 'Available' };
-}
-
-function getProgressColor(pct, isEmpty) {
-  if (isEmpty) return 'var(--color-error)';
-  if (pct <= 0.25) return 'var(--color-warning)';
-  if (pct >= 0.99) return 'var(--color-success)';
-  return 'var(--color-primary)';
-}
-
-function countUp(el, target, duration = 900) {
-  const start = performance.now();
-  const step = ts => {
-    const p = Math.min((ts - start) / duration, 1);
-    const ease = 1 - Math.pow(1 - p, 3);
-    el.textContent = Math.round(ease * target).toLocaleString();
-    if (p < 1) requestAnimationFrame(step);
-  };
-  requestAnimationFrame(step);
-}
-
-// ── RENDER FUNCTIONS ─────────────────────────────────────────
-function renderKPI(container, data) {
-  const cards = [
-    {
-      key: 'remaining_pro', label: 'Pro Queries', icon: 'pro',
-      desc: 'Advanced model queries remaining',
-      svg: '<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>'
-    },
-    {
-      key: 'remaining_research', label: 'Research', icon: 'research',
-      desc: 'Research-mode queries remaining',
-      svg: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>'
-    },
-    {
-      key: 'remaining_labs', label: 'Labs', icon: 'labs',
-      desc: 'Perplexity Labs remaining',
-      svg: '<path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v11m0 0a4 4 0 0 0 4 4 4 4 0 0 0 4-4M9 14H5a2 2 0 0 1-2-2V8m16 6h-4"/>'
-    },
-    {
-      key: 'remaining_agentic_research', label: 'Agentic Research', icon: 'agentic',
-      desc: 'Autonomous multi-step research',
-      svg: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>'
-    },
-  ];
-
-  container.innerHTML = cards.map(c => {
-    const val = data[c.key] ?? 0;
-    const isZero = val === 0;
-    const badge = isZero ? { cls: 'badge-empty', label: 'Depleted' } : val <= 5 ? { cls: 'badge-warn', label: 'Low' } : { cls: 'badge-ok', label: 'Available' };
-    return `
-      <article class="kpi-card" aria-label="${c.label}: ${val} remaining">
-        <div class="kpi-top">
-          <div class="kpi-icon ${c.icon}" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${c.svg}</svg>
-          </div>
-          <span class="kpi-badge ${badge.cls}">${badge.label}</span>
-        </div>
-        <div>
-          <div class="kpi-number${isZero ? ' zero' : ''}" data-countup="${val}">0</div>
-          <div class="kpi-label">${c.label}</div>
-        </div>
-        <div style="font-size:var(--tx-xs);color:var(--color-text-faint)">${c.desc}</div>
-      </article>`;
-  }).join('');
-
-  // Animate numbers
-  container.querySelectorAll('[data-countup]').forEach(n => {
-    countUp(n, parseInt(n.dataset.countup));
-  });
-}
-
-function renderCappedSources(container, sources) {
-  const capped = Object.entries(sources).filter(([, v]) => v.monthly_limit > 0);
-  if (!capped.length) { container.innerHTML = '<p style="color:var(--color-text-muted);font-size:var(--tx-sm)">No premium capped sources found.</p>'; return; }
-
-  // Destroy old charts
-  Object.values(chartInstances).forEach(c => c.destroy());
-  chartInstances = {};
-
-  container.innerHTML = capped.map(([key, val]) => {
-    const meta = SOURCE_META[key] || { name: key, tag: 'Source' };
-    const used = val.monthly_limit - val.remaining;
-    const pct = val.remaining / val.monthly_limit;
-    const color = getProgressColor(pct, val.remaining === 0);
-    const badge = getBadge(val.remaining, val.monthly_limit);
-    return `
-      <article class="source-card" aria-label="${meta.name}: ${val.remaining} of ${val.monthly_limit} remaining">
-        <div class="source-card-header">
-          <span class="source-card-name">${meta.name}</span>
-          <span class="source-card-tag">${meta.tag}</span>
-        </div>
-        <div class="source-chart-row">
-          <div class="source-chart-wrap" aria-hidden="true">
-            <canvas id="chart-${key}" width="72" height="72"></canvas>
-            <div class="source-chart-inner">
-              <span class="source-chart-num" data-countup="${val.remaining}">0</span>
-              <span class="source-chart-denom">/ ${val.monthly_limit}</span>
-            </div>
-          </div>
-          <div class="source-stats">
-            <div class="source-stat-row">
-              <div class="source-stat-dot" style="background:${color}"></div>
-              <span class="source-stat-label">Remaining</span>
-              <span class="source-stat-val" style="color:${color}">${fmt(val.remaining)}</span>
-            </div>
-            <div class="source-stat-row">
-              <div class="source-stat-dot" style="background:var(--color-surface-dynamic)"></div>
-              <span class="source-stat-label">Used</span>
-              <span class="source-stat-val">${fmt(used)}</span>
-            </div>
-            <div class="source-stat-row">
-              <div class="source-stat-dot" style="background:var(--color-text-faint)"></div>
-              <span class="source-stat-label">Monthly limit</span>
-              <span class="source-stat-val">${fmt(val.monthly_limit)}</span>
-            </div>
-            <div class="source-progress-track" style="margin-top:var(--sp3)">
-              <div class="source-progress-fill" data-width="${Math.round(pct*100)}" style="width:0%;background:${color}"></div>
-            </div>
-            <div style="margin-top:var(--sp2)"><span class="kpi-badge ${badge.cls}" style="font-size:10px">${badge.label} · ${Math.round(pct*100)}%</span></div>
-          </div>
-        </div>
-      </article>`;
-  }).join('');
-
-  // Animate count-ups
-  container.querySelectorAll('[data-countup]').forEach(n => countUp(n, parseInt(n.dataset.countup)));
-
-  // Animate progress bars
-  requestAnimationFrame(() => {
-    container.querySelectorAll('[data-width]').forEach(bar => {
-      setTimeout(() => { bar.style.width = bar.dataset.width + '%'; }, 100);
-    });
-  });
-
-  // Draw Chart.js doughnuts
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  const trackColor = isDark ? '#2b2a28' : '#e6e4df';
-
-  capped.forEach(([key, val]) => {
-    const canvas = document.getElementById('chart-' + key);
-    if (!canvas) return;
-    const color = getProgressColor(val.remaining / val.monthly_limit, val.remaining === 0);
-    const used = val.monthly_limit - val.remaining;
-    chartInstances[key] = new Chart(canvas, {
-      type: 'doughnut',
-      data: {
-        datasets: [{
-          data: [val.remaining, used],
-          backgroundColor: [color, trackColor],
-          borderWidth: 0,
-          borderRadius: 4,
-        }]
-      },
-      options: {
-        responsive: false, cutout: '72%',
-        animation: { duration: 900, easing: 'easeOutQuart' },
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-      }
-    });
-  });
-}
-
-function renderConnectors(active_container, unavail_container, sources) {
-  const active = Object.entries(sources).filter(([, v]) => v.monthly_limit === null);
-  const unavail = Object.entries(sources).filter(([, v]) => v.monthly_limit === 0);
-
-  active_container.innerHTML = active.map(([key]) => {
-    const meta = SOURCE_META[key] || { name: key, tag: '—' };
-    return `<div class="connector-chip" role="listitem" aria-label="${meta.name} — active, no limit">
-      <div class="conn-dot active" title="Active"></div>
-      <div class="conn-info">
-        <span class="conn-name">${meta.name}</span>
-        <span class="conn-sub">${meta.tag}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  unavail_container.innerHTML = unavail.map(([key]) => {
-    const meta = SOURCE_META[key] || { name: key, tag: '—' };
-    return `<div class="connector-chip unavailable" role="listitem" aria-label="${meta.name} — not in plan">
-      <div class="conn-dot off" title="Not available"></div>
-      <div class="conn-info">
-        <span class="conn-name">${meta.name}</span>
-        <span class="conn-sub">${meta.tag}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  if (!unavail.length) el('unavail-section').style.display = 'none';
-}
-
-// ── MAIN RENDER ──────────────────────────────────────────────
-function renderDashboard(data) {
-  currentData = data;
-  const sources = data.sources?.source_to_limit || {};
-
-  el('skeleton-loader').style.display = 'none';
-  el('paste-zone').classList.remove('visible');
-
-  renderKPI(el('kpi-grid'), data);
-  renderCappedSources(el('capped-grid'), sources);
-  renderConnectors(el('connectors-grid'), el('unavail-grid'), sources);
-
-  el('raw-block').textContent = JSON.stringify(data, null, 2);
-  el('dashboard').classList.add('visible');
-
-  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  setStatus('ok', `Updated at ${now}`);
-}
-
-// ── FETCH DATA ───────────────────────────────────────────────
-async function fetchData() {
-  setStatus('loading', 'Fetching data…');
-  el('refresh-btn').classList.add('spinning');
-  el('dashboard').classList.remove('visible');
-  el('paste-zone').classList.remove('visible');
-  el('skeleton-loader').style.display = '';
-
-  try {
-    const res = await fetch(SOURCE_URL, { credentials: 'include', mode: 'cors' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    renderDashboard(data);
-  } catch (e) {
-    el('skeleton-loader').style.display = 'none';
-    el('paste-zone').classList.add('visible');
-    setStatus('error', 'Auto-fetch failed — paste data below');
-  } finally {
-    el('refresh-btn').classList.remove('spinning');
-  }
-}
-
-// ── PASTE SUBMIT ─────────────────────────────────────────────
-el('paste-submit').addEventListener('click', () => {
-  const raw = el('paste-input').value.trim();
-  el('paste-error').style.display = 'none';
-  try {
-    const data = JSON.parse(raw);
-    if (!data.sources && data.remaining_pro === undefined) throw new Error('wrong shape');
-    renderDashboard(data);
-  } catch {
-    el('paste-error').style.display = 'block';
-  }
-});
-
-el('paste-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) el('paste-submit').click();
-});
-
-// ── REFRESH ──────────────────────────────────────────────────
-el('refresh-btn').addEventListener('click', fetchData);
-
-// ── RAW TOGGLE ───────────────────────────────────────────────
-el('raw-toggle').addEventListener('click', () => {
-  const block = el('raw-block');
-  const btn = el('raw-toggle');
-  const open = block.classList.toggle('open');
-  btn.setAttribute('aria-expanded', open);
-  btn.querySelector('svg polyline').setAttribute('points', open ? '18 15 12 9 6 15' : '6 9 12 15 18 9');
-  btn.lastChild.textContent = open ? ' Hide raw JSON' : ' Show raw JSON';
-});
-
-// ── THEME TOGGLE ─────────────────────────────────────────────
-(function() {
-  const html = document.documentElement;
-  const btn = el('theme-toggle');
-  let theme = matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
-  html.setAttribute('data-theme', theme);
-
-  function setIcon(t) {
-    btn.innerHTML = t === 'dark'
-      ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
-      : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-    btn.setAttribute('aria-label', 'Switch to ' + (t === 'dark' ? 'light' : 'dark') + ' mode');
-  }
-
-  setIcon(theme);
-  btn.addEventListener('click', () => {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', theme);
-    setIcon(theme);
-    // Redraw charts with new track color if data loaded
-    if (currentData) {
-      const sources = currentData.sources?.source_to_limit || {};
-      renderCappedSources(el('capped-grid'), sources);
-    }
-  });
-})();
-
-// ── INIT ─────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', fetchData);
-</script>
-
-<style>
-  .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0; }
-  kbd { font-family: monospace; background: var(--color-surface-dynamic); padding: 1px 5px; border-radius: 3px; font-size: 0.85em; }
-</style>
 </body>
 </html>
