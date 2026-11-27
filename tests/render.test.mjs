@@ -15,6 +15,28 @@ const root = here.replace(/\/tests\/[^/]+$/, '');
 const snapshot = JSON.parse(await readText(`${root}/data/latest.json`));
 const historyText = await readText(`${root}/data/history.jsonl`);
 
+/* The committed demo snapshot carries fixed timestamps, and the page ignores a
+   reset date that is already past. Shift the fixture so it is always "fresh"
+   relative to the clock the suite runs on; otherwise these assertions start
+   failing the day the demo reset date elapses. The published demo file itself
+   is untouched: only the in-memory copy moves. */
+const DAY_MS = 86400000;
+const ageMs = Date.now() - Date.parse(snapshot.fetched_at);
+const shiftISO = (iso) => new Date(Date.parse(iso) + ageMs).toISOString();
+const liveSnapshot = {
+  ...snapshot,
+  fetched_at: shiftISO(snapshot.fetched_at),
+  reset_at: snapshot.reset_at ? shiftISO(snapshot.reset_at) : snapshot.reset_at,
+};
+const liveHistoryText = historyText
+  .split('\n')
+  .map((line) => {
+    if (!line.trim()) return line;
+    const row = JSON.parse(line);
+    return JSON.stringify({ ...row, t: shiftISO(row.t) });
+  })
+  .join('\n');
+
 const snapshotWithoutLabs = {
   remaining_pro: 196,
   sources: { source_to_limit: {} },
@@ -36,7 +58,7 @@ const pastePayload = {
 };
 
 /* ── main env: the published snapshot ───────────────────────── */
-const env = installDOM({ snapshot, history: historyText });
+const env = installDOM({ snapshot: liveSnapshot, history: liveHistoryText });
 await import('../app.js');
 await env.settle();
 
@@ -85,7 +107,7 @@ eq(chart.config.data.datasets.length, 2, 'actual + projected series');
 eq(chart.config.data.datasets[1].label, 'Projected', 'second series is the projection');
 ok(chart.config.data.datasets[1].borderDash.length === 2, 'projection is dashed');
 const points = chart.config.data.datasets[0].data.filter((v) => v !== null).length;
-const expectedRows = historyText.split('\n').filter((line) => line.trim()).length;
+const expectedRows = liveHistoryText.split('\n').filter((line) => line.trim()).length;
 eq(points, expectedRows, 'every history row is plotted');
 ok(chart.config.data.datasets[1].data.slice(-1)[0] >= 0, 'projection never goes negative');
 ok(env.get('history-summary').textContent.includes('Draining'), 'burn rate summarised in words');
