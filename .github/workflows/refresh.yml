@@ -2,15 +2,21 @@ name: refresh data
 
 # Scrapes the current limits and commits them as static JSON.
 #
+# On demand only: there is no scheduled trigger, on purpose. The published page
+# ships the demo dataset, so an unattended run every two hours had nothing to
+# fetch and only produced a Pages deployment, plus the occasional transient
+# deploy-pages failure. Run it from the Actions tab when you want a snapshot.
+#
 # Needs one repository secret: PERPLEXITY_COOKIE, holding the Cookie header
 # your browser sends to perplexity.ai (or just the session token value).
 # Without it the job skips cleanly, so the page can ship before the secret
 # exists. See the README for how to obtain and rotate it.
+#
+# The deployment is retried once: actions/deploy-pages occasionally fails to
+# find the artifact it just uploaded ("Fetching artifact metadata failed") and
+# succeeds on a second attempt.
 
 on:
-  schedule:
-    # Every 2 hours, off the hour: GitHub delays jobs scheduled at :00.
-    - cron: '17 */2 * * *'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +25,9 @@ permissions:
   id-token: write
 
 concurrency:
-  group: refresh
+  # Same group as deploy.yml: two Pages deployments must never overlap,
+  # otherwise one of them loses the race for the github-pages artifact.
+  group: pages
   cancel-in-progress: false
 
 jobs:
@@ -27,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy1.outputs.page_url || steps.deploy2.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -73,5 +81,23 @@ jobs:
         with:
           path: _site
 
-      - id: deploy
+      - name: Deploy (attempt 1)
+        id: deploy1
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Let the artifact register before retrying
+        if: steps.deploy1.outcome == 'failure'
+        run: sleep 20
+
+      - name: Deploy (attempt 2)
+        id: deploy2
+        if: steps.deploy1.outcome == 'failure'
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - name: Fail only if both attempts failed
+        if: steps.deploy1.outcome == 'failure' && steps.deploy2.outcome == 'failure'
+        run: |
+          echo "::error::Pages deployment failed twice, see the artifact-metadata error above. Re-run this job."
+          exit 1

@@ -46,7 +46,7 @@ Ce projet contourne tout ça. Les chiffres sont écrits dans un **fichier JSON s
 
 ```mermaid
 flowchart LR
-  P["Point d'accès rate-limit de Perplexity"] -->|"cookie de session, stocké en secret de dépôt"| R["refresh.yml<br/>toutes les 2 heures"]
+  P["Point d'accès rate-limit de Perplexity"] -->|"cookie de session, stocké en secret de dépôt"| R["refresh.yml<br/>au lancement manuel"]
   R --> D["data/latest.json<br/>data/history.jsonl"]
   D --> A["app.js affiche le tableau de bord"]
   B["Ton navigateur, mode collage"] --> A
@@ -60,16 +60,16 @@ flowchart LR
 
 Le mode collage n'écrit jamais rien, nulle part. Tu peux aussi le forcer avec `?paste=1`.
 
-## 🔄 Garder les chiffres à jour automatiquement
+## 🔄 Rafraîchir à la demande
 
-Tu veux que la page soit à jour sans rien coller ? Laisse une Action planifiée le faire pour toi.
+Tu veux que la page soit à jour sans rien coller ? L'Action peut le faire pour toi. Elle ne tourne pas sur un minuteur : `refresh.yml` n'a aucun déclencheur planifié, parce que la page publiée sert le jeu de démonstration et qu'un run automatique toutes les deux heures ne faisait que redéployer le même fichier.
 
 1. Ouvre `https://www.perplexity.ai/rest/rate-limit/all` en étant connecté pour vérifier que ça se charge.
 2. Copie ton cookie : DevTools → **Network** → recharge → clique sur `rate-limit/all` → **Request Headers** → copie toute la valeur de `cookie:`. (Une simple valeur `__Secure-next-auth.session-token` fonctionne aussi.)
 3. Dépôt → **Settings → Secrets and variables → Actions → New repository secret** → nomme-le `PERPLEXITY_COOKIE` → colle → enregistre.
 4. Lance une fois le workflow **refresh data** (Actions → refresh data → Run workflow).
 
-Ensuite il tourne toutes les deux heures à :17, ne commit que si quelque chose a changé, et redéploie.
+Chaque lancement récupère les limites, ne commit `data/` que si les chiffres ont bougé, puis redéploie Pages. Le déploiement est retenté une fois si GitHub ne retrouve pas l'artefact qu'il vient d'envoyer.
 
 | | |
 | --- | --- |
@@ -77,7 +77,7 @@ Ensuite il tourne toutes les deux heures à :17, ne commit que si quelque chose 
 | **Il expire.** | Les jetons de session durent des semaines, pas éternellement. Quand le workflow commence à échouer, colle-en un nouveau. Toute autre solution demande un serveur. |
 | **Cloudflare peut le bloquer.** | Perplexity est derrière une protection anti-bot, et une IP de datacenter peut recevoir un 403. Si ça arrive, ajoute le cookie `cf_clearance` à la même valeur secrète. |
 | **Un échec ne vide jamais la page.** | En cas d'erreur, le script n'écrit rien et sort en erreur, donc la page garde le dernier instantané valide et affiche une bannière « données anciennes » au bout de six heures. |
-| **GitHub s'endort.** | Les workflows planifiés sont désactivés après ~60 jours sans activité du dépôt ; n'importe quel commit les réveille. Le cron est aussi « au mieux » et peut être en retard. |
+| **Rien ne tourne en arrière-plan.** | La page se met à jour quand tu cliques sur **Run workflow**, ou quand tu pousses un commit. Aucun déclencheur planifié : rien ne peut échouer ni redéployer les mêmes fichiers pendant que tu regardes ailleurs. |
 
 ## 🔒 Vie privée
 
@@ -111,7 +111,7 @@ data/history.jsonl       une ligne JSON compacte par relevé, conservation 30 jo
 scripts/fetch_limits.py  le récupérateur, bibliothèque standard uniquement
 scripts/make_demo_data.py régénère la série de démonstration
 tests/                   suites logique, récupérateur, câblage et rendu
-.github/workflows/       tests, déploiement Pages, rafraîchissement planifié
+.github/workflows/       tests, déploiement Pages, rafraîchissement à la demande
 ```
 
 `lib.js` contient tout ce qui mérite d'être testé — comment une charge utile est normalisée, à partir de quand un quota est « faible », comment un horodatage de réinitialisation est trouvé, comment une vitesse de consommation est projetée. `app.js` ne touche qu'au DOM.

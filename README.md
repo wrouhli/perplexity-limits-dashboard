@@ -46,7 +46,7 @@ This project dodges all of it. The numbers are written to a **static JSON file i
 
 ```mermaid
 flowchart LR
-  P["Perplexity rate-limit endpoint"] -->|"session cookie, stored as a repo secret"| R["refresh.yml<br/>runs every 2 hours"]
+  P["Perplexity rate-limit endpoint"] -->|"session cookie, stored as a repo secret"| R["refresh.yml<br/>runs on demand"]
   R --> D["data/latest.json<br/>data/history.jsonl"]
   D --> A["app.js renders the dashboard"]
   B["Your browser, paste mode"] --> A
@@ -60,16 +60,16 @@ flowchart LR
 
 Paste mode never writes anything anywhere. You can also force it with `?paste=1`.
 
-## 🔄 Keep it live automatically
+## 🔄 Refresh on demand
 
-Want the page current without pasting? Let a scheduled Action fetch it for you.
+Want the page current without pasting? The Action can fetch it for you. It does not run on a timer: `refresh.yml` has no scheduled trigger, because the published page ships the demo dataset and an unattended run every two hours only redeployed the same file.
 
 1. Open `https://www.perplexity.ai/rest/rate-limit/all` while logged in to confirm it loads.
 2. Copy your cookie: DevTools → **Network** → reload → click `rate-limit/all` → **Request Headers** → copy the whole `cookie:` value. (A bare `__Secure-next-auth.session-token` value works too.)
 3. Repo → **Settings → Secrets and variables → Actions → New repository secret** → name it `PERPLEXITY_COOKIE` → paste → save.
 4. Run the **refresh data** workflow once (Actions → refresh data → Run workflow).
 
-From then on it runs every two hours at :17, commits only when something changed, and redeploys.
+Each run fetches the limits, commits `data/` only if the numbers moved, and redeploys Pages. A deployment is retried once if GitHub fails to find the artifact it just uploaded.
 
 | | |
 | --- | --- |
@@ -77,7 +77,7 @@ From then on it runs every two hours at :17, commits only when something changed
 | **It expires.** | Session tokens last weeks, not forever. When the workflow starts failing, paste a fresh one. Any alternative to that needs a server. |
 | **Cloudflare may block it.** | Perplexity is behind bot protection, and a datacenter IP can get a 403. If that happens, append the `cf_clearance` cookie to the same secret. |
 | **A failure never empties the page.** | On error the script writes nothing and exits non-zero, so the page keeps the last good snapshot and shows a staleness banner after six hours. |
-| **GitHub sleeps.** | Scheduled workflows are disabled after ~60 days without repository activity; any commit wakes it. Cron is also best-effort and can run late. |
+| **Nothing runs in the background.** | The page updates when you press **Run workflow**, or when you push a commit. No scheduled trigger means nothing can fail, and nothing can redeploy the same files, while you are not looking. |
 
 ## 🔒 Privacy
 
@@ -111,7 +111,7 @@ data/history.jsonl       one compact JSON row per fetch, 30-day retention
 scripts/fetch_limits.py  the fetcher, standard library only
 scripts/make_demo_data.py regenerates the committed demo series
 tests/                   logic, fetcher, wiring and render suites
-.github/workflows/       tests, Pages deploy, scheduled refresh
+.github/workflows/       tests, Pages deploy, on-demand refresh
 ```
 
 `lib.js` holds everything worth testing — how a payload is normalised, when a quota counts as "Low", how a reset timestamp is discovered, how a burn rate is projected. `app.js` only touches the DOM.
